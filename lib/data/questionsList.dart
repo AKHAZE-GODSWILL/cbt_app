@@ -36,7 +36,7 @@ List<QuestionsModel> questions = [
     question: "Who is the greatest footballer of all time" , 
     options: {
       "Cristiano Ronaldo": false,
-      "Ojefia Akopomena ": false,
+      "Ojefia Akpomena ": false,
       "Lionel Messi": true,
       "Robert Lewandowski": false 
     }),
