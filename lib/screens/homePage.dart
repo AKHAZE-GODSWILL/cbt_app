@@ -1,5 +1,6 @@
 import 'package:cbt_app/data/questionsList.dart';
 import 'package:cbt_app/main.dart';
+import 'package:cbt_app/screens/resultScreen.dart';
 import 'package:flutter/material.dart';
 
 // this is the first page that runs on the app currently
@@ -309,8 +310,19 @@ class _HomePageState extends State<HomePage> {
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         OutlinedButton(
-                          onPressed: isPressed? (){
-                            _pageController.nextPage(duration: Duration(milliseconds: 500), curve: Curves.linear);
+                          onPressed: isPressed? index + 1 == questions.length? (){
+                            isPressed = false;
+                            
+                            Navigator.push(context,
+                             MaterialPageRoute(
+                              builder: (context)=> ResultScreen(score: score)));
+                          }:(){
+
+                            isPressed = false;
+                            _pageController.nextPage(
+                              duration: Duration(milliseconds: 500),
+                              curve: Curves.linear
+                            );
                           }: null,
                           child: Text(
                             index + 1 == questions.length? "See result"
