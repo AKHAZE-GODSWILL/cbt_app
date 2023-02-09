@@ -30,6 +30,10 @@ class _HomePageState extends State<HomePage> {
     super.initState();
   }
 
+
+  // this method is passed into the newTest page and is called from that page
+  // anytime a new question is added, the UI of this page refreshes
+  // this way, users don't need to restart the app to gain access to newly written data
   updateQuestionList(){
 
     // clears the previous list and makes a request for the updated list
