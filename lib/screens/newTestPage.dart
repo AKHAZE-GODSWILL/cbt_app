@@ -14,8 +14,9 @@ import 'package:flutter/material.dart';
 /// 
 class NewTestPage extends StatefulWidget{
 
-const NewTestPage({Key? key, required this.courseName, required this.refreshHomePage}):super(key:key);
+const NewTestPage({Key? key, required this.courseName, required this.existingCourseId, required this.refreshHomePage}):super(key:key);
 final String courseName;
+final String existingCourseId;
 final Function refreshHomePage;
 @override 
 State<NewTestPage> createState()=> _NewTestPage();
@@ -47,7 +48,7 @@ class _NewTestPage extends State<NewTestPage>{
 
   // initializes a fresh object to store my question and  options
   // and force the data into an exact structure
-  QuestionsModel questionDetails = QuestionsModel(id: "",question: "", options: []);
+  QuestionsModel questionDetails = QuestionsModel(id: "", courseId: "", question: "", options: [], timestamp: DateTime.now());
   CourseModel courseDetails = CourseModel(courseId: "", courseCode: "");
 
   // this list will hold all the text editing controller list
@@ -58,6 +59,8 @@ class _NewTestPage extends State<NewTestPage>{
   final courseBox = Hive.box('courseCodes');
   final questionsBox = Hive.box('quizQuestions');
 
+  DateTime questionTimestamp = DateTime.now();
+
   @override
   void initState() {
 
@@ -66,10 +69,15 @@ class _NewTestPage extends State<NewTestPage>{
     controllerList.add(TextEditingController());
 
     // creates a unique Id to be saved for this question
-    courseUniqueId = Uuid().v4();
+    courseUniqueId = widget.existingCourseId.isNotEmpty? widget.existingCourseId: Uuid().v4();
+    print("the course id is ${widget.existingCourseId}");
 
     // sets the id generated into the question and the course object
-    questionDetails.id = courseUniqueId;
+    questionDetails.courseId = courseUniqueId;
+
+    // sets the particular question Id
+    questionDetails.id = Uuid().v4();
+
     courseDetails.courseId = courseUniqueId;
 
     // sets the name of the course object
@@ -412,13 +420,22 @@ class _NewTestPage extends State<NewTestPage>{
                                       if(coursePresent.isEmpty){
 
                                         print(coursePresent);
-                                        courseBox.add(courseDetails).then(
+                                        courseDetails.timestamp = DateTime.now();
+                                        questionDetails.timestamp = courseDetails.timestamp!;
+
+                                        courseBox.put(courseUniqueId,courseDetails).then(
                                         (value) {
 
-                                          questionsBox.add(questionDetails).then(
+                                          // specifying the key of the data being put in the box as its id
+                                          
+                                          print("The current question timestamp is ${questionDetails.timestamp}");
+                                          questionsBox.put(questionDetails.id,questionDetails).then(
                                             (value)  {
 
                                               print("Did not find any course in the database. Added both course and question");
+
+                                              // after submission of the first question, you have to generate a new id for the next question
+                                              questionDetails.id = Uuid().v4();
                                               myWidgets.showToast(message: "Question added successfully");
                                                print(questionDetails.question);
                                               print(questionDetails.options);
@@ -456,8 +473,15 @@ class _NewTestPage extends State<NewTestPage>{
 
                                         print(coursePresent);
 
-                                        questionsBox.add(questionDetails).then(
+                                        questionDetails.timestamp = DateTime.now();
+
+                                        print("The current question timestamp is ${questionDetails.timestamp}");
+                                        
+                                        questionsBox.put(questionDetails.id,questionDetails).then(
                                             (value)  {
+
+                                              // after submission of the first question, you have to generate a new id for the next question
+                                              questionDetails.id = Uuid().v4();
 
                                               print("found course in the database and added only question");
                                               myWidgets.showToast(message: "Question added successfully");
@@ -490,6 +514,8 @@ class _NewTestPage extends State<NewTestPage>{
                                             }
                                           );
                                       }
+
+                                      
                                       
                                       // print(questionDetails.question);
                                       // print(questionDetails.options);

@@ -1,7 +1,9 @@
 
 import 'package:cbt_app/main.dart';
+import 'package:cbt_app/models/questionsModel.dart';
 import 'package:cbt_app/screens/newTestPage.dart';
 import 'package:cbt_app/screens/quizPage.dart';
+import 'package:cbt_app/screens/viewAllQuestions.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 
@@ -26,7 +28,10 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     
     
-    courses.addAll(courseBox.values.toList());
+    // courses.addAll(courseBox.values.toList());
+    updateQuestionList();
+
+    print("The update question list called in the init state");
     super.initState();
   }
 
@@ -43,6 +48,13 @@ class _HomePageState extends State<HomePage> {
 
       Hive.openBox('quizQuestions');
       courses.addAll(courseBox.values.toList());
+
+      if (courses.length> 1){
+        courses.sort((a,b){
+          return a.timestamp.compareTo(b.timestamp);
+        });
+      }
+      
     });
 
     print("The update question List function called");
@@ -66,7 +78,14 @@ class _HomePageState extends State<HomePage> {
       // I need to make app constantly listen to changes in the database and update
       // once the app changes
 
-      body: ListView.builder(
+      body: courses.isEmpty? Center(
+        child: Text("Your Quiz List is Empty,\nClick the Add button\nbelow to add new Quiz",
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          color: Colors.orange,
+          fontSize: 25,
+        ),)
+      ):ListView.builder(
 
         itemCount: courses.length,
         itemBuilder: (context, index){
@@ -74,7 +93,7 @@ class _HomePageState extends State<HomePage> {
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          SizedBox(height: 80,),
+          SizedBox(height: 40,),
           Center(
             child: Container(
               width: MediaQuery.of(context).size.width*0.7,
@@ -103,12 +122,13 @@ class _HomePageState extends State<HomePage> {
 
                     Container(
                       margin: EdgeInsets.only(left: 50),
-                      height: 30,
+                      height: 50,
                       width: 200,
                       // color: Colors.green,
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
+
                           Container(
                         height: 30,
                         width: MediaQuery.of(context).size.width*0.4,
@@ -147,19 +167,77 @@ class _HomePageState extends State<HomePage> {
                         width: 10,
                       ),
 
-                      Icon(Icons.add,
-                        color: Colors.white,
+//////////////////////////////////////////////////////////////////////////////
+///this is where I need to change
+                      
+                      
+                      InkWell(
+                        onTap: (){
+                          print("The Edit button tapped");
+
+                          // courseCodes
+                          Hive.openBox('courseCodes').then((value) {
+                            final Map courseMap = courseBox.toMap();
+                            dynamic courseKey;
+                            
+
+                            // since id is unique, I'm sure this is going to run only once
+                            courseMap.forEach((key, value){
+                              if(value.courseId == courses[index].courseId)
+                              courseKey = key;
+
+                              print(courseKey);
+                            });
+
+
+                            editTestDialog(
+                              context: context,
+                              courseData: courses[index],
+                              // courseNumber: courseKey, 
+                              refreshHomePage: updateQuestionList
+                           );
+                          });
+                          
+                          //  refreshHomePage: updateQuestionList() 
+                        },
+                        child: Container(
+                          width: 30,
+                          height: 30,
+                          // color: Colors.red,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              customEditButton(),
+                              customEditButton(),
+                              customEditButton()
+                            ],
+                          ),
+                        ),
                       )
-                        ],
+
+                      ],
                       ),
                     )
                 ],
               ),
             ),
-          )
+          ),
+
+          SizedBox(height: 40,),
         ],
       );
         })
+    );
+}
+
+  customEditButton(){
+    return Container(
+      height: 4,
+      width: 4,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        shape: BoxShape.circle
+      ),
     );
   }
 
@@ -258,7 +336,14 @@ class _HomePageState extends State<HomePage> {
 
                                   print("The OK button pushed");
                                   Navigator.pop(context);
-                                  Navigator.push(context, MaterialPageRoute(builder: (context)=>NewTestPage(courseName: _newTestController.text.trim(), refreshHomePage: updateQuestionList,)));
+
+                                  Hive.openBox('quizQuestions').then((value) {
+                                    Navigator.push(context, MaterialPageRoute(builder: (context)=>NewTestPage(
+                                    courseName: _newTestController.text.trim(),
+                                    existingCourseId: "",
+                                    refreshHomePage: updateQuestionList,)));
+                                  });
+                                  
                                 },
                                 child: Center(
                                   child: Text("OK",
@@ -271,6 +356,199 @@ class _HomePageState extends State<HomePage> {
                                 ),
                               ),
                             ),
+
+                
+              ],
+            ),
+            );
+          }
+        );
+      }
+    );
+  }
+
+  // This runs when the edit button is clicked
+  editTestDialog({context, courseData, required Function refreshHomePage}){
+    
+
+    return showDialog(
+      barrierColor: Colors.black.withOpacity(0.9),
+      context: context,
+      builder: (context){
+
+        bool isLoading = false;
+
+        // stateful builder is used so that the dialog can change its state
+        // if you don't use it, you cant change state
+        return StatefulBuilder(
+          builder: (context, setState) {
+
+            return Container(
+              
+            height: MediaQuery.of(context).size.height,
+            width:  MediaQuery.of(context).size.width,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+            
+
+              // the add new question button
+               Container(
+                        height: 60,
+                        width: MediaQuery.of(context).size.width*0.55,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(10),
+                          color: Colors. orange
+                        ),
+                        child: GestureDetector(
+
+                          onTap: (){
+
+                            
+                            Hive.openBox('quizQuestions').then((value) {
+
+                              Navigator.pop(context);
+
+                              Navigator.push(context, MaterialPageRoute(builder: (context)=>NewTestPage(
+                              courseName: courseData.courseCode,
+                              existingCourseId: courseData.courseId,
+                              refreshHomePage: updateQuestionList,)));
+
+                            });
+                            
+                            
+                          },
+                          child: Center(
+                            child: Text("Add New Question",
+                              style:TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w300,
+                              fontSize: 18
+                                              ),),
+                          ),
+                        ),
+                      ),
+                    SizedBox(
+                      height: MediaQuery.of(context).size.height* 0.05
+                    ),
+
+                      // the All questions button, takes user to the all questions page
+                      Container(
+                        height: 50,
+                        width: MediaQuery.of(context).size.width*0.55,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(10),
+                          color: Colors. orange
+                        ),
+                        child: GestureDetector(
+                          onTap: (){
+
+                            Navigator.pop(context);
+                            Hive.openBox("quizQuestions").then((value) {
+                              
+                            Navigator.push(
+                              context, 
+                              MaterialPageRoute(
+                                builder: (context)=> ViewAllQuestions(courseId: courseData.courseId, )
+                              )
+                            );
+                            });
+                            
+                            
+                            
+                          },
+                          child: Center(
+                            child: Text("All Questions",
+                              style:TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w300,
+                              fontSize: 18
+                                              ),),
+                          ),
+                        ),
+                      ),
+
+                      SizedBox(
+                        height: MediaQuery.of(context).size.height* 0.05
+                      ),
+
+                      // the delete button, performs the delete operations
+
+                      Container(
+                        height: 50,
+                        width: MediaQuery.of(context).size.width*0.55,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(10),
+                          color: Colors. orange
+                        ),
+                        child: GestureDetector(
+                          onTap: (){
+
+                            // sets loading to true so the circular progress indicator can show loading
+                            // when button is pressed
+
+                            setState((){
+                              isLoading = true;
+                            });
+
+                            // Hive box is opened again to avoid any errors
+
+                            Hive.openBox('quizQuestions').then((value) {
+
+                            final questionsBox = Hive.box('quizQuestions');
+
+                            // loads the full questions into the question Map variable so that sorting 
+                            // can take place
+
+                            final Map questionMap = questionsBox.toMap();
+                            dynamic desiredKey;
+
+
+                            int i = 1;
+
+                            // this code is going to loop through the entire questions and performs
+                            // the delete action anywhere the if statement condition is met
+
+                            questionMap.forEach((key, value){
+
+                                  if (value.courseId == courseData.courseId)
+                                      desiredKey = key;
+
+                                     desiredKey !=null?  questionsBox.delete(value.id) : print('Still loading');
+
+                                     print("Deleted operation ran successfully $i times");
+
+                                     i++;
+                            });
+
+                              // immediately all the the questions are deleted, the course is deleted too
+                              courseBox.delete(courseData.courseId);
+                              setState((){
+                              
+                              // the refresh home page function is called to update the Ui and show users
+                              // the available questions left
+
+                              questionsBox.compact().then((value) => refreshHomePage());
+                              isLoading = false;
+
+                              Navigator.pop(context);
+                              myWidgets.showToast(message: "Course deleted successfully");
+                            });
+                              // questionsBox.delete(desiredKey);
+                            });
+                            
+                          },
+                          child: Center(
+                            child: isLoading? Center(child: CircularProgressIndicator(),):Text("Delete",
+                              style:TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w300,
+                              fontSize: 18
+                                              ),),
+                          ),
+                        ),
+                      ),
 
                 
               ],

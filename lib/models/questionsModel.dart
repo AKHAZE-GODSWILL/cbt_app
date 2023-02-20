@@ -8,11 +8,18 @@ class QuestionsModel{
   String id;
 
   @HiveField(1)
-  String? question;
+  String courseId;
 
   @HiveField(2)
+  String? question;
+
+  @HiveField(3)
   List<Map<String, bool>>? options;
 
+  @HiveField(4)
+  DateTime timestamp;
+
   // the constructor for this class 
-  QuestionsModel({required this.id, required this.question, required this.options});
+  QuestionsModel({required this.id,required this.courseId, required this.question, required this.options, required this.timestamp});
+
 }

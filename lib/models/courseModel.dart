@@ -11,5 +11,8 @@ class CourseModel {
   @HiveField(1)
   String courseCode;
 
+  @HiveField(2)
+  DateTime? timestamp;
+
   CourseModel({required this.courseId, required this.courseCode});
 }

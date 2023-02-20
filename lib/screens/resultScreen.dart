@@ -65,7 +65,7 @@ class _ResultScreenState extends State<ResultScreen> {
               color: Colors.orange,
               textColor: Colors.white,
               elevation: 0,
-              child: Text("Repeat Test",),
+              child: Text("Back to Homepage",),
              )
 
           ],

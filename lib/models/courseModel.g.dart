@@ -19,17 +19,19 @@ class CourseModelAdapter extends TypeAdapter<CourseModel> {
     return CourseModel(
       courseId: fields[0] as String,
       courseCode: fields[1] as String,
-    );
+    )..timestamp = fields[2] as DateTime?;
   }
 
   @override
   void write(BinaryWriter writer, CourseModel obj) {
     writer
-      ..writeByte(2)
+      ..writeByte(3)
       ..writeByte(0)
       ..write(obj.courseId)
       ..writeByte(1)
-      ..write(obj.courseCode);
+      ..write(obj.courseCode)
+      ..writeByte(2)
+      ..write(obj.timestamp);
   }
 
   @override

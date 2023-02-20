@@ -18,23 +18,29 @@ class QuestionsModelAdapter extends TypeAdapter<QuestionsModel> {
     };
     return QuestionsModel(
       id: fields[0] as String,
-      question: fields[1] as String?,
-      options: (fields[2] as List?)
+      courseId: fields[1] as String,
+      question: fields[2] as String?,
+      options: (fields[3] as List?)
           ?.map((dynamic e) => (e as Map).cast<String, bool>())
           .toList(),
+      timestamp: fields[4] as DateTime,
     );
   }
 
   @override
   void write(BinaryWriter writer, QuestionsModel obj) {
     writer
-      ..writeByte(3)
+      ..writeByte(5)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
-      ..write(obj.question)
+      ..write(obj.courseId)
       ..writeByte(2)
-      ..write(obj.options);
+      ..write(obj.question)
+      ..writeByte(3)
+      ..write(obj.options)
+      ..writeByte(4)
+      ..write(obj.timestamp);
   }
 
   @override

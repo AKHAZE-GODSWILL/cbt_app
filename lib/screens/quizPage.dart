@@ -39,11 +39,35 @@ class _QuizPageState extends State<QuizPage> {
     // questionData.addAll(questionsBox.values.toList().cast<QuestionsModel>());
     
 
-    questionData.addAll(questionsBox.values
-      .toList()
-      .where((element) => element.id == widget.questionId)
-      .cast<QuestionsModel>());
+      loadQuestionsFromDatabase().then((value) {
+      
+      print("The first question timestamp is ${questionData[0].timestamp}");
+      
+      setState(() {
+
+        if (questionData.length> 1){
+        questionData.sort((a,b){
+          return a.timestamp!.compareTo(b.timestamp!);
+        });
+      }
+      });
+      });
+
+
+      
+
     super.initState();
+  }
+
+ Future<dynamic> loadQuestionsFromDatabase() async{
+    
+     questionData.addAll(questionsBox.values
+      .toList()
+      .where((element) => element.courseId == widget.questionId)
+      .cast<QuestionsModel>());
+      
+      
+      
   }
 
   @override
