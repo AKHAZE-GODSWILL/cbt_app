@@ -18,6 +18,8 @@ class _QuizPageState extends State<QuizPage> {
 
   // Creating a page view controller
   // controllers helps you controls one widget through the actions you take on another widget
+  bool isLoading = false;
+
   PageController _pageController = PageController(initialPage: 0);
   List<QuestionsModel> questionData = [];
   final box= Hive.openBox('quizQuestions');
@@ -36,21 +38,41 @@ class _QuizPageState extends State<QuizPage> {
   @override
   void initState() {
 
+    print("The init state started");
+
     // questionData.addAll(questionsBox.values.toList().cast<QuestionsModel>());
-    
+
+      setState(() {
+        isLoading = true;
+      });
 
       loadQuestionsFromDatabase().then((value) {
       
-      print("The first question timestamp is ${questionData[0].timestamp}");
+      // print("The first question timestamp is ${questionData[0].timestamp}");
       
       setState(() {
 
-        if (questionData.length> 1){
-        questionData.sort((a,b){
-          return a.timestamp!.compareTo(b.timestamp!);
-        });
-      }
+
+
+        if(questionData.isEmpty){
+
+          myWidgets.showToast(message: "You have No Questions currently");
+          Navigator.pop(context);
+        }
+
+        else{
+
+          if (questionData.length> 1){
+            questionData.sort((a,b){
+              return a.timestamp!.compareTo(b.timestamp!);
+            });
+          }
+
+          isLoading = false;
+        }
       });
+
+
       });
 
 
@@ -60,6 +82,7 @@ class _QuizPageState extends State<QuizPage> {
   }
 
  Future<dynamic> loadQuestionsFromDatabase() async{
+
     
      questionData.addAll(questionsBox.values
       .toList()
@@ -86,7 +109,7 @@ class _QuizPageState extends State<QuizPage> {
           child: Container(
             height: MediaQuery.of(context).size.height,
             width: MediaQuery.of(context).size.width,
-            child: PageView.builder(
+            child: isLoading? Center(child: CircularProgressIndicator()):PageView.builder(
               //The controller is set here
               controller: _pageController,
               onPageChanged: (page){

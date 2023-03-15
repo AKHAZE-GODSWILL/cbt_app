@@ -141,7 +141,7 @@ class _HomePageState extends State<HomePage> {
 
                             // I have to open the box before pushing to the current page,
                             // else, different kinds of error are encountered in different levels
-                            Hive.openBox('quizQuestions')
+                             Hive.openBox('quizQuestions')
                             .then((value) => Navigator.push(
                               context, 
                               MaterialPageRoute(
@@ -324,15 +324,8 @@ class _HomePageState extends State<HomePage> {
                 ),
 
                 _newTestController.text.isEmpty? SizedBox():
-                Container(
-                              height: 30,
-                              width: MediaQuery.of(context).size.width*0.4,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(10),
-                                color: Colors. orange
-                              ),
-                              child: GestureDetector(
-                                onTap: (){
+                GestureDetector(
+                  onTap: (){
 
                                   print("The OK button pushed");
                                   Navigator.pop(context);
@@ -345,6 +338,13 @@ class _HomePageState extends State<HomePage> {
                                   });
                                   
                                 },
+                  child: Container(
+                                height: 30,
+                                width: MediaQuery.of(context).size.width*0.4,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(10),
+                                  color: Colors. orange
+                                ),
                                 child: Center(
                                   child: Text("OK",
                                     style:TextStyle(
@@ -355,7 +355,7 @@ class _HomePageState extends State<HomePage> {
                                                     ),),
                                 ),
                               ),
-                            ),
+                ),
 
                 
               ],

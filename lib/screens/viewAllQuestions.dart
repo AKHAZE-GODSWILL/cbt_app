@@ -11,6 +11,11 @@ class ViewAllQuestions extends StatefulWidget{
   State<ViewAllQuestions> createState()=> _ViewAllQuestions();
 }
 
+enum MenuValues{
+    editQuestion,
+    delete
+  }
+
 class _ViewAllQuestions extends State<ViewAllQuestions>{
 
 
@@ -19,6 +24,8 @@ class _ViewAllQuestions extends State<ViewAllQuestions>{
   List<QuestionsModel> questionData = [];
   
   final questionsBox = Hive.box('quizQuestions');
+
+  
 
   @override
   void initState() {
@@ -111,7 +118,14 @@ class _ViewAllQuestions extends State<ViewAllQuestions>{
     return Scaffold(
       
       backgroundColor: constants.mainColor,
-      body: isLoading? const Center(child: CircularProgressIndicator(),) : ListView.builder(
+      body: isLoading? const Center(child: CircularProgressIndicator(),) : questionData.isEmpty? Center(
+        child: Text("Your Questions List is empty",
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          color: Colors.orange,
+          fontSize: 25,
+        ),)
+      ): ListView.builder(
         
         itemCount: questionData.length,
         itemBuilder: (context, index){
@@ -131,23 +145,19 @@ class _ViewAllQuestions extends State<ViewAllQuestions>{
                 ///
 
                 // creating this object so that the one in the box is not tempered with
-                final newObject = QuestionsModel(
-                  
-                  id: currentQuestion.id,
-                  courseId: currentQuestion.courseId,
-                  question: currentQuestion.question, 
-                  options: currentQuestion.options,
-                  timestamp:currentQuestion.timestamp );
+                
 
                   print(" questions box opened successfully");
-                  Navigator.push(
-                    context, 
-                    MaterialPageRoute(
-                      builder: (context)=> EditQuestionPage(
-                        currentQuestion: newObject,
-                        refreshQuestionsPage: refreshPage,)
-                    )
-                  );
+
+
+                  // Navigator.push(
+                  //   context, 
+                  //   MaterialPageRoute(
+                  //     builder: (context)=> EditQuestionPage(
+                  //       currentQuestion: newObject,
+                  //       refreshQuestionsPage: refreshPage,)
+                  //   )
+                  // );
                   print("Number ${index + 1} question clicked");
                 
                 
@@ -168,7 +178,7 @@ class _ViewAllQuestions extends State<ViewAllQuestions>{
                       padding: const EdgeInsets.only(left:8),
                       child: Container(
                         // color: Colors.red,
-                        width: MediaQuery.of(context).size.width*0.8,
+                        width: MediaQuery.of(context).size.width*0.75,
                         child: Text("${index + 1}.  ${currentQuestion.question}",
                         style: TextStyle(
                           color: Colors.white
@@ -180,23 +190,69 @@ class _ViewAllQuestions extends State<ViewAllQuestions>{
                     ),
 
                     InkWell(
-                      onTap: () {
-                        questionsBox.delete(currentQuestion.id).then((value) {
-                          setState(() {
-                            questionsBox.compact().then(
-                              (value) => refreshPage());
-                            
-                          });
-                        });
-                      },
 
-                      child: Padding(
-                        padding: const EdgeInsets.only(left: 10),
-                        child: Icon(
-                          Icons.delete,
-                          color: Colors.red,
-                          size: 25,
-                        ),
+                      // onTap: () {
+
+                      //   questionsBox.delete(currentQuestion.id).then((value) {
+                      //     setState(() {
+                      //       questionsBox.compact().then(
+                      //         (value) => refreshPage());
+                            
+                      //     });
+                      //   });
+                      // },
+
+                      child: PopupMenuButton<MenuValues>(
+                        icon: Icon(Icons.more_vert, color: Colors.white,),
+                        color: Colors.black.withOpacity(0.5),
+                        itemBuilder: (BuildContext context)=>[
+                          const PopupMenuItem(
+                            child: Text("Edit Question", 
+                              style: TextStyle(color: Colors.white),
+                            ),
+                            value: MenuValues.editQuestion,
+                          ),
+
+                          const PopupMenuItem(
+                            child: Text("Delete", 
+                              style: TextStyle(color: Colors.white),
+                            ),
+                            value: MenuValues.delete,
+                          )
+                        ],
+
+                        onSelected: (value){
+
+                          if(value == MenuValues.editQuestion){
+
+                            final newObject = QuestionsModel(
+                            
+                            id: currentQuestion.id,
+                            courseId: currentQuestion.courseId,
+                            question: currentQuestion.question, 
+                            options: currentQuestion.options,
+                            timestamp:currentQuestion.timestamp );
+
+                            Navigator.push(
+                              context, 
+                              MaterialPageRoute(
+                                builder: (context)=> EditQuestionPage(
+                                  currentQuestion: newObject,
+                                  refreshQuestionsPage: refreshPage,)
+                              )
+                            );
+                           print("Number ${index + 1} question clicked");
+
+                          }
+
+                          // if the delete was selected from the pop up menu
+                          else if(value == MenuValues.delete){
+
+                            deleteQuestionDialog(context: context, courseData: currentQuestion);
+                              
+                          }
+
+                        },
                       ),
                     )
                   ],
@@ -205,6 +261,176 @@ class _ViewAllQuestions extends State<ViewAllQuestions>{
             ),
           );
         }),
+    );
+  }
+
+  customEditButton(){
+    return Container(
+      height: 4,
+      width: 4,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        shape: BoxShape.circle
+      ),
+    );
+  }
+
+
+   // This runs when the edit button is clicked
+  deleteQuestionDialog({required context, required courseData}){
+    
+
+    return showDialog(
+      barrierColor: Colors.black.withOpacity(0.9),
+      context: context,
+      builder: (context){
+
+        bool isLoading = false;
+
+        // stateful builder is used so that the dialog can change its state
+        // if you don't use it, you cant change state
+        return StatefulBuilder(
+          builder: (context, setState) {
+
+            return Container(
+              
+            height: MediaQuery.of(context).size.height,
+            width:  MediaQuery.of(context).size.width,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+            
+
+              // the add new question button
+               Container(
+                        height: 350,
+                        width: MediaQuery.of(context).size.width*0.75,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(10),
+                          color: constants.mainColor
+                        ),
+                        child: GestureDetector(
+
+                          onTap: (){
+                            
+                          },
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+
+                              Padding(
+                                padding: const EdgeInsets.only(left:10, right: 10),
+                                child: Text("PlEASE CONFIRM ACTION",
+                                  style:TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w400,
+                                  fontSize: 18
+                                                  ),),
+                              ),
+
+
+                            SizedBox(
+                              height: 10,
+                            ),
+
+                          Padding(
+                            padding: const EdgeInsets.only(left:10, right: 10),
+                            child: Text("Are sure you want to delete this question?",
+                              style:TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w300,
+                              fontSize: 17
+                                              ),),
+                          ),
+
+                          SizedBox(
+                              height: 30,
+                            ),
+
+                          GestureDetector(
+                            onTap: (){
+                               Navigator.pop(context);
+                            },
+                            child: Container(
+                                                  height: 50,
+                                                  width: MediaQuery.of(context).size.width*0.55,
+                                                  decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: Colors.orange
+                            )
+                                                  ),
+                                                  child: Center(
+                            child: Text("No",
+                              style:TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w300,
+                              fontSize: 18
+                                              ),),
+                                                  ),
+                                                ),
+                          ),
+
+                           SizedBox(
+                              height: 20,
+                            ),
+
+                          GestureDetector(
+                            onTap: (){
+                               setState((){
+                                isLoading = true;
+
+                                questionsBox.delete(courseData.id).then((value) {
+                                  setState(() {
+                                    questionsBox.compact().then(
+
+                                      (value) { 
+                                        refreshPage();
+                                        Navigator.pop(context);
+                                      }
+                                      
+                                    );
+                                    
+                                  });
+                                });
+                               });
+                            },
+                            child: Container(
+                              height: 50,
+                              width: MediaQuery.of(context).size.width*0.55,
+                              decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(10),
+                                  color: Colors.red
+                              ),
+
+                              child: Center(
+                                child: isLoading? CircularProgressIndicator(color: Colors.white,): Text("Yes",
+                                  style:TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w300,
+                                  fontSize: 18
+                                  ),),
+                              ),
+                            ),
+                          ),
+                            
+                      ],
+                          )
+                        ),
+                      ),
+
+
+
+                      
+                
+              ],
+            ),
+            );
+          }
+        );
+      }
     );
   }
 }
