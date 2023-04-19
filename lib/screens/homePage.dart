@@ -16,6 +16,12 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
+enum EditTestValues{
+    addNewQuestion,
+    allQuestions,
+    delete
+  }
+
 class _HomePageState extends State<HomePage> {
 
   // Creating a page view controller
@@ -127,6 +133,7 @@ class _HomePageState extends State<HomePage> {
                       // color: Colors.green,
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
 
                           Container(
@@ -163,57 +170,87 @@ class _HomePageState extends State<HomePage> {
                           ),
                         ),
                       ),
-                      SizedBox(
-                        width: 10,
-                      ),
 
 //////////////////////////////////////////////////////////////////////////////
 ///this is where I need to change
                       
                       
-                      InkWell(
-                        onTap: (){
-                          print("The Edit button tapped");
+                      PopupMenuButton<EditTestValues>(
+                      
+                      icon: Center(child: Icon(Icons.more_vert, color: Colors.white,)),
+                      color: Colors.black.withOpacity(0.8),
+                      itemBuilder: (BuildContext context)=>[
 
-                          // courseCodes
-                          Hive.openBox('courseCodes').then((value) {
-                            final Map courseMap = courseBox.toMap();
-                            dynamic courseKey;
-                            
-
-                            // since id is unique, I'm sure this is going to run only once
-                            courseMap.forEach((key, value){
-                              if(value.courseId == courses[index].courseId)
-                              courseKey = key;
-
-                              print(courseKey);
-                            });
-
-
-                            editTestDialog(
-                              context: context,
-                              courseData: courses[index],
-                              // courseNumber: courseKey, 
-                              refreshHomePage: updateQuestionList
-                           );
-                          });
-                          
-                          //  refreshHomePage: updateQuestionList() 
-                        },
-                        child: Container(
-                          width: 30,
-                          height: 30,
-                          // color: Colors.red,
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              customEditButton(),
-                              customEditButton(),
-                              customEditButton()
-                            ],
-                          ),
+                      const PopupMenuItem(
+                        child: Text("Add New Question", 
+                          style: TextStyle(color: Colors.white),
                         ),
-                      )
+                        value: EditTestValues.addNewQuestion,
+                      ),
+
+                      const PopupMenuItem(
+                        child: Text("All Questions", 
+                          style: TextStyle(color: Colors.white),
+                        ),
+                        value: EditTestValues.allQuestions,
+                      ),
+
+                      const PopupMenuItem(
+                        child: Text("Delete", 
+                          style: TextStyle(color: Colors.white),
+                        ),
+                        value: EditTestValues.delete,
+                      ),
+                      ],
+
+                      onSelected: (value){
+
+                      dynamic courseData = courses[index];
+
+                      if(value == EditTestValues.addNewQuestion){
+
+                        Hive.openBox('quizQuestions').then((value) {
+
+                          
+                          // Navigator.pop(context);
+
+                          Navigator.push(context, MaterialPageRoute(builder: (context)=>NewTestPage(
+                          courseName: courseData.courseCode,
+                          existingCourseId: courseData.courseId,
+                          refreshHomePage: updateQuestionList,)));
+
+                        });
+
+                      }
+
+                      // if the delete was selected from the pop up menu
+                      else if(value == EditTestValues.allQuestions){
+
+                        Hive.openBox("quizQuestions").then((value) {
+                          
+                        Navigator.push(
+                          context, 
+                          MaterialPageRoute(
+                            builder: (context)=> ViewAllQuestions(courseId: courseData.courseId, )
+                          )
+                        );
+                        });
+                          
+                      }
+
+                       else if(value == EditTestValues.delete){
+
+                        deleteCourseDialog(
+                          context: context, 
+                          courseData: courseData, 
+                          refreshHomePage: updateQuestionList);
+                          
+                      }
+
+                      },
+                      ),
+
+                      
 
                       ],
                       ),
@@ -230,16 +267,6 @@ class _HomePageState extends State<HomePage> {
     );
 }
 
-  customEditButton(){
-    return Container(
-      height: 4,
-      width: 4,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        shape: BoxShape.circle
-      ),
-    );
-  }
 
   createNewTestDialog({context}){
     TextEditingController _newTestController = TextEditingController();
@@ -367,8 +394,8 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // This runs when the edit button is clicked
-  editTestDialog({context, courseData, required Function refreshHomePage}){
+   // This Prompt shows when you are about to delete a full course to make sure that you don't delete something mistakenly
+  deleteCourseDialog({required context, required courseData,  required Function refreshHomePage}){
     
 
     return showDialog(
@@ -395,96 +422,82 @@ class _HomePageState extends State<HomePage> {
 
               // the add new question button
                Container(
-                        height: 60,
-                        width: MediaQuery.of(context).size.width*0.55,
+                        height: 350,
+                        width: MediaQuery.of(context).size.width*0.75,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(10),
-                          color: Colors. orange
+                          color: constants.mainColor
                         ),
                         child: GestureDetector(
 
                           onTap: (){
-
-                            
-                            Hive.openBox('quizQuestions').then((value) {
-
-                              Navigator.pop(context);
-
-                              Navigator.push(context, MaterialPageRoute(builder: (context)=>NewTestPage(
-                              courseName: courseData.courseCode,
-                              existingCourseId: courseData.courseId,
-                              refreshHomePage: updateQuestionList,)));
-
-                            });
-                            
                             
                           },
-                          child: Center(
-                            child: Text("Add New Question",
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+
+                              Padding(
+                                padding: const EdgeInsets.only(left:10, right: 10),
+                                child: Text("PlEASE CONFIRM ACTION",
+                                  style:TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w400,
+                                  fontSize: 18
+                                                  ),),
+                              ),
+
+
+                            SizedBox(
+                              height: 10,
+                            ),
+
+                          Padding(
+                            padding: const EdgeInsets.only(left:10, right: 10),
+                            child: Text("Are sure you want to delete this Course?",
+                              style:TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w300,
+                              fontSize: 17
+                                              ),),
+                          ),
+
+                          SizedBox(
+                              height: 30,
+                            ),
+
+                          GestureDetector(
+                            onTap: (){
+                               Navigator.pop(context);
+                            },
+                            child: Container(
+                                                  height: 50,
+                                                  width: MediaQuery.of(context).size.width*0.55,
+                                                  decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: Colors.orange
+                            )
+                                                  ),
+                                                  child: Center(
+                            child: Text("No",
                               style:TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.w300,
                               fontSize: 18
                                               ),),
+                                                  ),
+                                                ),
                           ),
-                        ),
-                      ),
-                    SizedBox(
-                      height: MediaQuery.of(context).size.height* 0.05
-                    ),
 
-                      // the All questions button, takes user to the all questions page
-                      Container(
-                        height: 50,
-                        width: MediaQuery.of(context).size.width*0.55,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(10),
-                          color: Colors. orange
-                        ),
-                        child: GestureDetector(
-                          onTap: (){
+                           SizedBox(
+                              height: 20,
+                            ),
 
-                            Navigator.pop(context);
-                            Hive.openBox("quizQuestions").then((value) {
-                              
-                            Navigator.push(
-                              context, 
-                              MaterialPageRoute(
-                                builder: (context)=> ViewAllQuestions(courseId: courseData.courseId, )
-                              )
-                            );
-                            });
-                            
-                            
-                            
-                          },
-                          child: Center(
-                            child: Text("All Questions",
-                              style:TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w300,
-                              fontSize: 18
-                                              ),),
-                          ),
-                        ),
-                      ),
-
-                      SizedBox(
-                        height: MediaQuery.of(context).size.height* 0.05
-                      ),
-
-                      // the delete button, performs the delete operations
-
-                      Container(
-                        height: 50,
-                        width: MediaQuery.of(context).size.width*0.55,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(10),
-                          color: Colors. orange
-                        ),
-                        child: GestureDetector(
-                          onTap: (){
-
+                          GestureDetector(
+                            onTap: (){
+                               
                             // sets loading to true so the circular progress indicator can show loading
                             // when button is pressed
 
@@ -537,19 +550,34 @@ class _HomePageState extends State<HomePage> {
                             });
                               // questionsBox.delete(desiredKey);
                             });
-                            
-                          },
-                          child: Center(
-                            child: isLoading? Center(child: CircularProgressIndicator(),):Text("Delete",
-                              style:TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w300,
-                              fontSize: 18
-                                              ),),
+                            },
+                            child: Container(
+                              height: 50,
+                              width: MediaQuery.of(context).size.width*0.55,
+                              decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(10),
+                                  color: Colors.red
+                              ),
+
+                              child: Center(
+                                child: isLoading? CircularProgressIndicator(color: Colors.white,): Text("Yes",
+                                  style:TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w300,
+                                  fontSize: 18
+                                  ),),
+                              ),
+                            ),
                           ),
+                            
+                      ],
+                          )
                         ),
                       ),
 
+
+
+                      
                 
               ],
             ),
